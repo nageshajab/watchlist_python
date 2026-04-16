@@ -1,5 +1,6 @@
 import sqlite3
 from flask import Flask, request, jsonify, render_template
+from flask import send_from_directory
 import json
 from flask import send_file
 from io import BytesIO
@@ -352,6 +353,14 @@ def import_data():
 @app.route("/backup")
 def backup_page():
     return render_template("backup.html")
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js')
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('static', 'manifest.json')
 
 if __name__ == "__main__":
     app.run(debug=True)
