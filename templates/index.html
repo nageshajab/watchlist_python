@@ -23,23 +23,22 @@
     <nav class="navbar navbar-expand-lg navbar-light mb-4">
       <div class="container">
         <a class="navbar-brand fw-bold text-primary" href="/">🎬 MyWatchlist</a>
-        <button
-          class="btn btn-primary d-lg-none"
-          onclick="location.href = '/addpage'"
-        >
-          + Add
-        </button>
       </div>
     </nav>
 
     <div class="container">
-      <div class="mb-3 text-end">
+      <div class="mb-3 d-flex justify-content-end gap-2">
         <button
           class="btn btn-outline-primary"
           data-bs-toggle="collapse"
           data-bs-target="#searchCollapse"
+          onclick="toggleText(this)"
         >
-          🔍 Toggle Search
+          🔍 Show Search
+        </button>
+
+        <button class="btn btn-success" onclick="location.href = '/addpage'">
+          + Add Movie
         </button>
       </div>
       <div class="collapse" id="searchCollapse">
@@ -65,12 +64,6 @@
                 onclick="clearSearch()"
               >
                 Clear
-              </button>
-              <button
-                class="btn btn-success btn-lg d-none d-lg-block"
-                onclick="location.href = '/addpage'"
-              >
-                Add Movie
               </button>
             </div>
           </div>
