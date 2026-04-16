@@ -1,4 +1,4 @@
-let showDetails = true;
+let showDetails = false;
 
 /**
  * Main search function to fetch movies from the backend.
