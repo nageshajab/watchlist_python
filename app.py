@@ -1,5 +1,8 @@
 import sqlite3
 from flask import Flask, request, jsonify, render_template
+import json
+from flask import send_file
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -249,6 +252,106 @@ def search_movie():
         "per_page": limit
     })
 
+@app.route("/export", methods=["GET"])
+def export_data():
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT id, name, type, ott, status, language, rating
+        FROM movies ORDER BY id
+    """)
+    movies = c.fetchall()
+
+    export_movies = []
+
+    for row in movies:
+        movie_id = row[0]
+
+        c.execute("SELECT tag FROM tags WHERE movie_id=?", (movie_id,))
+        tags = [t[0] for t in c.fetchall()]
+
+        export_movies.append({
+            "name": row[1],
+            "type": row[2],
+            "ott": row[3],
+            "status": row[4],
+            "language": row[5],
+            "rating": row[6],
+            "tags": tags
+        })
+
+    conn.close()
+
+    data = {
+        "movies": export_movies
+    }
+
+    json_bytes = json.dumps(data, indent=2).encode("utf-8")
+    buffer = BytesIO(json_bytes)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="watchlist_export.json",
+        mimetype="application/json"
+    )
+
+@app.route("/import", methods=["POST"])
+def import_data():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+
+    try:
+        data = json.load(file)
+    except Exception as e:
+        return jsonify({"error": "Invalid JSON file"}), 400
+
+    movies = data.get("movies")
+    if not isinstance(movies, list):
+        return jsonify({"error": "Invalid JSON structure"}), 400
+
+    conn = get_connection()
+    c = conn.cursor()
+
+    # 🔥 FULL RESET (order matters)
+    c.execute("DELETE FROM tags")
+    c.execute("DELETE FROM movies")
+    c.execute("DELETE FROM sqlite_sequence WHERE name='movies'")
+    c.execute("DELETE FROM sqlite_sequence WHERE name='tags'")
+
+    # ✅ Import fresh data
+    for movie in movies:
+        c.execute("""
+            INSERT INTO movies (name, type, ott, status, language, rating)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            movie.get("name"),
+            movie.get("type"),
+            movie.get("ott"),
+            movie.get("status"),
+            movie.get("language"),
+            movie.get("rating")
+        ))
+
+        movie_id = c.lastrowid
+
+        for tag in movie.get("tags", []):
+            c.execute(
+                "INSERT INTO tags (movie_id, tag) VALUES (?, ?)",
+                (movie_id, tag)
+            )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Database imported successfully!"})
+
+@app.route("/backup")
+def backup_page():
+    return render_template("backup.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

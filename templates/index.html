@@ -22,7 +22,35 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-light mb-4">
       <div class="container">
+        <!-- Brand -->
         <a class="navbar-brand fw-bold text-primary" href="/">🎬 MyWatchlist</a>
+
+        <!-- Mobile toggle -->
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNavbar"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <!-- Backup link -->
+            <li class="nav-item">
+              <a class="nav-link fw-medium" href="/backup"> 📦 Backup </a>
+            </li>
+
+            <!-- Add movie -->
+            <li class="nav-item">
+              <a class="btn btn-primary ms-lg-2" href="/addpage">
+                + Add Movie
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
 

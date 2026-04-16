@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import / Export Data</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="form-card p-4 text-center">
+            <h3 class="fw-bold mb-3">📦 Backup & Restore</h3>
+            <p class="text-muted mb-4">
+              Export your entire watchlist or import it back from a JSON file.
+            </p>
+
+            <!-- EXPORT -->
+            <div class="d-grid mb-3">
+              <a href="/export" class="btn btn-primary btn-lg">
+                ⬇️ Export to JSON
+              </a>
+            </div>
+
+            <hr />
+
+            <!-- IMPORT -->
+            <form id="importForm" enctype="multipart/form-data">
+              <div class="mb-3">
+                <input
+                  type="file"
+                  name="file"
+                  id="importFile"
+                  accept="application/json"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-danger btn-lg">
+                  ⬆️ Import & Replace Data
+                </button>
+              </div>
+            </form>
+
+            <p class="small text-muted mt-3">
+              ⚠ Importing will permanently delete all existing data.
+            </p>
+
+            <div class="mt-4">
+              <a href="/" class="btn btn-link">← Back to Watchlist</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("importForm");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const fileInput = document.getElementById("importFile");
+
+        if (!fileInput.files.length) {
+          alert("Please select a JSON file first.");
+          return;
+        }
+
+        const confirmImport = confirm(
+          "This will DELETE ALL existing data and replace it.\n\nDo you want to continue?",
+        );
+
+        if (!confirmImport) return;
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        try {
+          const res = await fetch("/import", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+          alert(data.message || "Import completed");
+
+          window.location.href = "/";
+        } catch (err) {
+          alert("Import failed. Check console.");
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>
