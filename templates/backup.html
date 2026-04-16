@@ -83,11 +83,16 @@
           return;
         }
 
-        const confirmImport = confirm(
-          "This will DELETE ALL existing data and replace it.\n\nDo you want to continue?",
+        const userInput = prompt(
+          "⚠ WARNING!\n\n" +
+            "This will DELETE ALL existing data and replace it.\n\n" +
+            "Type IMPORT to confirm:",
         );
 
-        if (!confirmImport) return;
+        if (userInput !== "IMPORT") {
+          alert("Import cancelled. No data was changed.");
+          return;
+        }
 
         const formData = new FormData();
         formData.append("file", fileInput.files[0]);
@@ -99,11 +104,11 @@
           });
 
           const data = await res.json();
-          alert(data.message || "Import completed");
+          alert(data.message || "Import completed successfully");
 
           window.location.href = "/";
         } catch (err) {
-          alert("Import failed. Check console.");
+          alert("Import failed. Check console for details.");
           console.error(err);
         }
       });
