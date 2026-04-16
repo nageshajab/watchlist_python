@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ "Edit" if movie else "Add" }} Movie | Watchlist</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link
+      href="{{ url_for('static', filename='style.css') }}"
+      rel="stylesheet"
+    />
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="form-card p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">{{ "Edit Movie" if movie else "Add New Movie" }}</h2>
+                    <p class="text-muted small">Fill in the details to update your watchlist</p>
+                </div>
+
+                <form id="movieForm">
+                    <input type="hidden" id="movieId" value="{{ movie.id if movie else '' }}">
+
+                    <div class="mb-3">
+                        <label for="movieName" class="form-label">Movie Name</label>
+                        <input type="text" class="form-control" id="movieName" 
+                               value="{{ movie.name if movie else '' }}" placeholder="Enter title" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="movieType" class="form-label">Type</label>
+                            <select class="form-select" id="movieType">
+                                <option value="">Select Type</option>
+                                <option value="Movie" {{ 'selected' if movie and movie.type == 'Movie' }}>Movie</option>
+                                <option value="Web Series" {{ 'selected' if movie and movie.type == 'Web Series' }}>Web Series</option>
+                                <option value="Documentary" {{ 'selected' if movie and movie.type == 'Documentary' }}>Documentary</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="movieOtt" class="form-label">OTT Platform</label>
+                            <select class="form-select" id="movieOtt">
+                                <option value="">Select Platform</option>
+                                {% for platform in ["Netflix", "Prime Video", "Disney+ Hotstar", "JioCinema", "Zee5", "SonyLIV", "Apple TV+", "Other"] %}
+                                    <option value="{{ platform }}" {{ 'selected' if movie and movie.ott == platform }}>{{ platform }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="movieStatus" class="form-label">Watch Status</label>
+                             <select class="form-select" id="movieStatus">
+                                <option value="">Select Status</option>
+                                <option value="To Watch" {{ 'selected' if movie and movie.status == 'To Watch' }}>To Watch</option>
+                                <option value="Watching" {{ 'selected' if movie and movie.status == 'Watching' }}>Watching</option>
+                                <option value="Completed" {{ 'selected' if movie and movie.status == 'Completed' }}>Completed</option>
+                                <option value="Dropped" {{ 'selected' if movie and movie.status == 'Dropped' }}>Dropped</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="movieLanguage" class="form-label">Language</label>
+                             <select class="form-select" id="movieLanguage">
+                                <option value="">Select Language</option>
+                                <option value="English" {{ 'selected' if movie and movie.language == 'English' }}>English</option>
+                                <option value="Hindi" {{ 'selected' if movie and movie.language == 'Hindi' }}>Hindi</option>
+                                <option value="Marathi" {{ 'selected' if movie and movie.language == 'Marathi' }}>Marathi</option>
+                                <option value="Tamil" {{ 'selected' if movie and movie.language == 'Tamil' }}>Tamil</option>
+                                 <option value="Malyalam" {{ 'selected' if movie and movie.language == 'Malyalam' }}>Malyalam</option>
+                                <option value="Telugu" {{ 'selected' if movie and movie.language == 'Telugu' }}>Telugu</option>
+                                <!-- Add more languages as needed -->
+                            </select>
+                        </div>
+                    </div>
+                              
+
+                    <div class="mb-3">
+                        <label for="movieRating" class="form-label">Rating (0 - 10)</label>
+                        <input type="range" class="form-range" min="0" max="10" step="1" id="movieRating" 
+                               value="{{ movie.rating if movie else '0' }}" oninput="this.nextElementSibling.value = this.value">
+                        <output class="fw-bold text-primary">{{ movie.rating if movie else '0' }}</output>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="movieTags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="movieTags" 
+                               value="{{ movie.tags|join(', ') if movie else '' }}" placeholder="Separated by commas">
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="/" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="button" class="btn btn-primary" onclick="submitForm()">
+                            {{ "Update Movie" if movie else "Save Movie" }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitForm() {
+        const id = document.getElementById("movieId").value;
+        const url = id ? `/edit/${id}` : "/add";
+        
+        const formData = new FormData();
+        formData.append("name", document.getElementById("movieName").value);
+        formData.append("type", document.getElementById("movieType").value);
+        formData.append("ott", document.getElementById("movieOtt").value);
+        formData.append("status", document.getElementById("movieStatus").value);
+        formData.append("language", document.getElementById("movieLanguage").value);
+        formData.append("rating", document.getElementById("movieRating").value);
+        formData.append("tags", document.getElementById("movieTags").value);
+
+        fetch(url, { method: "POST", body: formData })
+          .then(res => res.json())
+          .then(data => {
+            alert(data.message);
+            window.location.href = "/";
+          })
+          .catch(err => console.error("Error saving movie:", err));
+    }
+</script>
+
+</body>
+</html>
