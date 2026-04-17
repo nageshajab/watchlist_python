@@ -7,7 +7,7 @@ from io import BytesIO
 
 app = Flask(__name__)
 
-DB_FILE = "data.db"
+DB_FILE = "/home/data.db"
 
 def get_connection():
     return sqlite3.connect(DB_FILE)
