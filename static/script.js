@@ -4,11 +4,38 @@ let showDetails = false;
  * Main search function to fetch movies from the backend.
  * Renders Bootstrap cards into the #results grid.
  */
+function hideCancelledAndCompleted(page = 1) {
+  console.log("Hiding Cancelled and Completed movies...");
+  const defaultStatuses = ["watching", "to watch"];
+
+  document.querySelectorAll(".status-checkbox").forEach((cb) => {
+    if (defaultStatuses.includes(cb.value)) {
+      cb.checked = true;
+    } else {
+      cb.checked = false;
+    }
+  });
+  search(page);
+}
+
 function search(page = 1) {
   const query = document.getElementById("searchBox").value.trim();
+
+  const statuses = getSelectedStatuses(); // 👈 array
+
   const limit = 12; // Adjusted for a better grid look (multiple of 1, 2, 3, 4)
 
-  fetch(`/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`)
+  const params = new URLSearchParams();
+  params.append("page", page);
+  params.append("limit", limit);
+
+  if (query) params.append("q", query);
+
+  if (statuses.length) {
+    params.append("status", statuses.join(","));
+  }
+
+  fetch(`/search?${params.toString()}`)
     .then((response) => response.json())
     .then((data) => {
       const resultsDiv = document.getElementById("results");
@@ -105,6 +132,26 @@ function renderPagination(data) {
   }
 }
 
+function getSelectedStatuses() {
+  return Array.from(document.querySelectorAll(".status-checkbox:checked")).map(
+    (cb) => cb.value,
+  );
+}
+
+function updateStatusDropdownText() {
+  const selected = getSelectedStatuses();
+  const btn = document.getElementById("statusDropdownBtn");
+
+  if (selected.length === 0) {
+    btn.innerText = "All Status";
+  } else {
+    btn.innerText = selected.join(", ");
+  }
+}
+
+document.querySelectorAll(".status-checkbox").forEach((cb) => {
+  cb.addEventListener("change", updateStatusDropdownText);
+});
 /**
  * Clears search results and resets the search box.
  */
@@ -112,6 +159,9 @@ function clearSearch() {
   document.getElementById("searchBox").value = "";
   document.getElementById("results").innerHTML = "";
   document.getElementById("pagination").innerHTML = "";
+  document.querySelectorAll(".status-checkbox").forEach((cb) => {
+    cb.checked = true;
+  });
 }
 
 /**

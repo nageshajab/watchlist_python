@@ -186,6 +186,7 @@ def edit_movie(movie_id):
 @app.route("/search", methods=["GET"])
 def search_movie():
     query = request.args.get("q", "").strip()
+    status = request.args.get("status", "").strip()
     page = int(request.args.get("page", 1))
     limit = int(request.args.get("limit", 12))
     offset = (page - 1) * limit
@@ -193,45 +194,56 @@ def search_movie():
     conn = get_connection()
     c = conn.cursor()
 
+    where_clauses = []
+    params = []
+
+    # 🔎 Text search (movie name OR tag)
     if query:
-        search_param = f"%{query}%"
+        where_clauses.append("(m.name LIKE ? OR t.tag LIKE ?)")
+        params.extend([f"%{query}%", f"%{query}%"])
 
-        # ✅ FIX: fetch BEFORE running another query
-        c.execute('''
-            SELECT DISTINCT m.* FROM movies m
-            LEFT JOIN tags t ON m.id = t.movie_id
-            WHERE m.name LIKE ? OR t.tag LIKE ?
-            ORDER BY m.id DESC LIMIT ? OFFSET ?
-        ''', (search_param, search_param, limit, offset))
+    # 🎯 Status filter
+    if status:        
+        statuses = status.split(",")
+        placeholders = ",".join(["?"] * len(statuses))
+        where_clauses.append(f"LOWER(m.status) IN ({placeholders})")
+        params.extend(statuses)
 
-        movies = c.fetchall()
+    where_sql = ""
+    if where_clauses:
+        where_sql = "WHERE " + " AND ".join(where_clauses)
 
-        c.execute('''
-            SELECT COUNT(DISTINCT m.id) FROM movies m
-            LEFT JOIN tags t ON m.id = t.movie_id
-            WHERE m.name LIKE ? OR t.tag LIKE ?
-        ''', (search_param, search_param))
+    # ✅ MAIN QUERY
+    sql = f"""
+        SELECT DISTINCT m.*
+        FROM movies m
+        LEFT JOIN tags t ON m.id = t.movie_id
+        {where_sql}
+        ORDER BY m.id DESC
+        LIMIT ? OFFSET ?
+    """
 
-        total = c.fetchone()[0]
+    print("Executing SQL:", sql)
+    print("With params:", params, "Limit:", limit, "Offset:", offset)
+    c.execute(sql, (*params, limit, offset))
+    movies = c.fetchall()
 
-    else:
-        # ✅ FIX: fetch BEFORE count query
-        c.execute(
-            "SELECT * FROM movies ORDER BY id DESC LIMIT ? OFFSET ?",
-            (limit, offset)
-        )
-        movies = c.fetchall()
+    # ✅ TOTAL COUNT QUERY
+    count_sql = f"""
+        SELECT COUNT(DISTINCT m.id)
+        FROM movies m
+        LEFT JOIN tags t ON m.id = t.movie_id
+        {where_sql}
+    """
 
-        c.execute("SELECT COUNT(*) FROM movies")
-        total = c.fetchone()[0]
+    c.execute(count_sql, params)
+    total = c.fetchone()[0]
 
     results = []
-
     for row in movies:
-        m_id = row[0]
-
-        c.execute("SELECT tag FROM tags WHERE movie_id=?", (m_id,))
-        m_tags = [t[0] for t in c.fetchall()]
+        movie_id = row[0]
+        c.execute("SELECT tag FROM tags WHERE movie_id=?", (movie_id,))
+        tags = [t[0] for t in c.fetchall()]
 
         results.append({
             "id": row[0],
@@ -241,7 +253,7 @@ def search_movie():
             "status": row[4],
             "language": row[5],
             "rating": row[6],
-            "tags": m_tags
+            "tags": tags
         })
 
     conn.close()
